@@ -56,9 +56,10 @@ void initializeGameState(GameState &gameState)
       gameState.board[l][i] = 0;
     }
   }
+
   // random is min inclusive, max exclusive
-  gameState.activeLayer = random(0,4);
-  gameState.cursorPosition = random(0,16);
+  gameState.activeLayer = random(0, 4);
+  gameState.cursorPosition = random(0, 16);
   gameState.blinkIsOn = false;
   gameState.lastBlinkMs = 0;
   gameState.isPlayer1Turn = true;
@@ -137,15 +138,17 @@ void updateBoard(GameState &gameState)
 
     // Choose a new layer and position
     // todo may want to make it so can't choose the current layer or a non-empty position. Definitely want to make it so that the layer chosen has at least 1 legal move. Could maybe select for any empty position, to bias towards levels with more empty spots.
-    gameState.activeLayer = random(0,4);
-    gameState.cursorPosition = random(0,16);
+    gameState.activeLayer = random(0, 4);
+    gameState.cursorPosition = random(0, 16);
   }
 
   lastButtonValue = buttonValue;
 }
 
-void disableAllLayers() {
-  for (int i = 0; i < NUM_LAYERS; i++) {
+void disableAllLayers()
+{
+  for (int i = 0; i < NUM_LAYERS; i++)
+  {
     digitalWrite(layerPins[i], LOW);
   }
 }
@@ -171,7 +174,7 @@ void layerToBytes(uint8_t layer[16], uint8_t cursorPosition, bool blinkIsOn, uin
     // On the board, the bicolor LEDs are wired to the shift registers in alternating color order
     // (LED 1 color 1 pin, LED 1 color 2 pin, LED 2 color 1 pin, ...)
     // so color 1 pins are even and color2 pins are odd
-    uint8_t color1BitIndex = i * 2;       // 0, 2, ...30
+    uint8_t color1BitIndex = i * 2;     // 0, 2, ...30
     uint8_t color2BitIndex = i * 2 + 1; // 1, 3, ...31
 
     // Use |= instead of = to write just that bit in the byte
@@ -186,7 +189,8 @@ void layerToBytes(uint8_t layer[16], uint8_t cursorPosition, bool blinkIsOn, uin
   }
 }
 
-void renderLEDsForLayer(uint8_t layerIndex, uint8_t bytesToRender[4]){
+void renderLEDsForLayer(uint8_t layerIndex, uint8_t bytesToRender[4])
+{
   disableAllLayers();
 
   digitalWrite(LATCH_PIN, LOW);
@@ -232,7 +236,8 @@ void renderGame(GameState &gameState)
 
   // Next layer
   currentLayer++;
-  if (currentLayer >= NUM_LAYERS) currentLayer = 0;
+  if (currentLayer >= NUM_LAYERS)
+    currentLayer = 0;
 }
 
 void setup()
@@ -243,7 +248,8 @@ void setup()
   pinMode(X_PIN, INPUT);
   pinMode(Y_PIN, INPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  for (int i = 0; i < NUM_LAYERS; i++) {
+  for (int i = 0; i < NUM_LAYERS; i++)
+  {
     pinMode(layerPins[i], OUTPUT);
   }
   disableAllLayers();
@@ -251,7 +257,8 @@ void setup()
   initializeGameState(gameState);
 }
 
-void loop() {
+void loop()
+{
   updateCursorPosition(gameState);
 
   updateBoard(gameState);
