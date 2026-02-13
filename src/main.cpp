@@ -119,6 +119,85 @@ void updateCursorPosition(GameState &gameState)
   }
 }
 
+uint8_t getValueAtXYZ(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z)
+{
+  return board[z][y * 4 + x];
+}
+
+uint8_t getStreakLength(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
+{
+  // Not counting the starting position as part of the streak,
+  // since will call this for both directions,
+  // which would result in the start position being double counted
+  uint8_t streakLength = 0;
+
+  for (uint8_t step = 1; step < 4; step++)
+  {
+    int x2 = x + (dx * step);
+    int y2 = y + (dy * step);
+    int z2 = z + (dz * step);
+
+    // stop if outside of cube
+    if (x2 < 0 || y2 < 0 || z2 < 0 || x2 >= 4 || y2 >= 4 || z2 >= 4)
+      break;
+
+    uint8_t value = getValueAtXYZ(board, x2, y2, z2);
+
+    // stop if different color
+    if (value != player)
+      break;
+
+    streakLength++;
+  }
+
+  return streakLength;
+}
+
+uint8_t checkForGameOver(const uint8_t board[4][16], uint8_t lastLayer, uint8_t lastPosition)
+{
+  // Don't need to scan for ALL possible 4 in a rows,
+  // just need to check if the last played spot makes a 4 in a row
+  // These are the possible 4-in-a-row directions
+  // (consider a line with between each of these coordinates and
+  // the coordinate {0,0,0} representing the player's location)
+  static const int DIRECTIONS[13][3] = {
+      // Vary just x, y, or z
+      {1, 0, 0},
+      {0, 1, 0},
+      {0, 0, 1},
+      // Vary xy, xz, or yz
+      {1, 1, 0},
+      {1, 0, 1},
+      {0, 1, 1},
+      {1, -1, 0},
+      {1, 0, -1},
+      {0, 1, -1},
+      // Vary xyz
+      {1, 1, 1},
+      {1, -1, 1},
+      {1, 1, -1},
+      {-1, 1, 1}};
+
+  uint8_t x = lastPosition % 4;
+  uint8_t y = lastPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  uint8_t z = lastLayer;
+  uint8_t player = getValueAtXYZ(board, x, y, z);
+
+  for (uint8_t d = 0; d < 13; d++)
+  {
+    int dx = DIRECTIONS[d][0];
+    int dy = DIRECTIONS[d][1];
+    int dz = DIRECTIONS[d][2];
+    uint8_t streakLength = 1 + getStreakLength(board, x, y, z, dx, dy, dz, player) + getStreakLength(board, x, y, z, -dx, -dy, -dz, player);
+
+    if (streakLength == 4)
+      return player;
+  }
+  // todo check for stalemate and return 3 if so. stalemate = board full. any other conditions?
+
+  return 0; // no winner
+}
+
 void updateBoard(GameState &gameState)
 {
   static int lastButtonValue = HIGH;
@@ -131,7 +210,7 @@ void updateBoard(GameState &gameState)
     gameState.board[gameState.activeLayer][gameState.cursorPosition] = gameState.isPlayer1Turn ? 1 : 2;
 
     // Check for game over (win or stalemate)
-    // gameState.winner = checkForGameOver(gameState.board); // todo add back
+    gameState.winner = checkForGameOver(gameState.board, gameState.activeLayer, gameState.cursorPosition);
 
     // Switch players
     gameState.isPlayer1Turn = !gameState.isPlayer1Turn;
