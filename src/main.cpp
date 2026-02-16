@@ -434,6 +434,42 @@ void renderGameOver(GameState &gameState)
     currentLayer = 0;
 }
 
+void renderStalemate(GameState &gameState)
+{
+  static const unsigned long BLINK_PERIOD_MS = 200;
+
+  unsigned long now = millis();
+
+  if (now - gameState.lastBlinkMs >= BLINK_PERIOD_MS)
+  {
+    gameState.blinkIsOn = !gameState.blinkIsOn;
+    gameState.lastBlinkMs = now;
+  }
+
+  static int currentLayer = 0;
+
+  uint8_t layerValues[16];
+
+  for (int i = 0; i < 16; i++)
+  {
+    layerValues[i] = gameState.blinkIsOn ? 1 : 2;
+  }
+
+  uint8_t layerBytes[4];
+
+  layerToBytes(layerValues, 0, false, layerBytes);
+
+  renderLEDsForLayer(currentLayer, layerBytes);
+
+  // Hold it briefly
+  delayMicroseconds(LAYER_ON_TIME_US);
+
+  // Next layer
+  currentLayer++;
+  if (currentLayer >= NUM_LAYERS)
+    currentLayer = 0;
+}
+
 void setup()
 {
   pinMode(LATCH_PIN, OUTPUT);
@@ -463,10 +499,10 @@ void loop()
       // Give a visual indication that the game is over
       renderGameOver(gameState);
     }
-    // else if (gameState.status == STALEMATE)
-    // {
-    //   // todo render stalemate
-    // }
+    else if (gameState.status == STALEMATE)
+    {
+      renderStalemate(gameState);
+    }
   }
   else
   {
