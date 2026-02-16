@@ -145,6 +145,43 @@ void freezeGame(GameState &gameState)
   gameState.frozenUntilMs = millis() + 3000;
 }
 
+// Return 0,1,2 to indicate the number of opponent pieces that are flanked in the given dxyz direction
+uint8_t getNumFlanked(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
+{
+  uint8_t opponentStreak = 0;
+  bool isFlanked = false;
+
+  for (uint8_t step = 1; step < 4; step++)
+  {
+    int x2 = x + (dx * step);
+    int y2 = y + (dy * step);
+    int z2 = z + (dz * step);
+
+    // stop if outside of cube
+    if (x2 < 0 || y2 < 0 || z2 < 0 || x2 >= 4 || y2 >= 4 || z2 >= 4)
+    {
+      break;
+    }
+
+    uint8_t value = getValueAtXYZ(board, x2, y2, z2);
+
+    // stop if empty spot
+    if (value == 0)
+    {
+      break;
+    }
+
+    // stop if same color as player, but toggle isFlanked
+    if (value == player)
+    {
+      isFlanked = true;
+      break;
+    }
+    opponentStreak++;
+  }
+  return isFlanked ? opponentStreak : 0;
+}
+
 uint8_t getStreakLength(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
 {
   // Not counting the starting position as part of the streak,
@@ -245,6 +282,27 @@ void updatePotentialGameOver(GameState &gameState)
         gameState.winMask[currentZ] |= (1u << (currentIndex));
       }
       foundWin = true;
+    }
+
+    uint8_t positiveNumFlanked = getNumFlanked(gameState.board, x, y, z, dx, dy, dz, player);
+    uint8_t negativeNumFlanked = getNumFlanked(gameState.board, x, y, z, -dx, -dy, -dz, player);
+    for (uint8_t step = 1; step <= positiveNumFlanked; step++)
+    {
+      uint8_t currentX = x + dx * step;
+      uint8_t currentY = y + dy * step;
+      uint8_t currentZ = z + dz * step;
+      uint8_t currentIndex = currentY * 4 + currentX;
+
+      gameState.board[currentZ][currentIndex] = 0;
+    }
+    for (uint8_t step = 1; step <= negativeNumFlanked; step++)
+    {
+      uint8_t currentX = x - dx * step;
+      uint8_t currentY = y - dy * step;
+      uint8_t currentZ = z - dz * step;
+      uint8_t currentIndex = currentY * 4 + currentX;
+
+      gameState.board[currentZ][currentIndex] = 0;
     }
   }
 
