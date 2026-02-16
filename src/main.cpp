@@ -264,6 +264,27 @@ void updatePotentialGameOver(GameState &gameState)
   }
 }
 
+uint8_t selectRandomEmptyIndex(const uint8_t board[4][16])
+{
+  uint8_t start = random(0, 64);
+
+  for (uint8_t offset = 0; offset < 64; offset++)
+  {
+    uint8_t index = (start + offset) % 64;
+
+    uint8_t layer = index / 16;
+    uint8_t position = index % 16;
+
+    if (board[layer][position] == 0)
+    {
+      return index;
+    }
+  }
+
+  // technically should never reach here since this should never be called if the board is full (stalemate)
+  return 0;
+}
+
 void updateBoard(GameState &gameState)
 {
   static int lastButtonValue = HIGH;
@@ -282,9 +303,9 @@ void updateBoard(GameState &gameState)
     gameState.isPlayer1Turn = !gameState.isPlayer1Turn;
 
     // Choose a new layer and position
-    // todo may want to make it so can't choose the current layer or a non-empty position. Definitely want to make it so that the layer chosen has at least 1 legal move. Could maybe select for any empty position, to bias towards levels with more empty spots.
-    gameState.activeLayer = random(0, 4);
-    gameState.cursorPosition = random(0, 16);
+    uint8_t nextIndex = selectRandomEmptyIndex(gameState.board);
+    gameState.activeLayer = nextIndex / 16;
+    gameState.cursorPosition = nextIndex % 16;
   }
 
   lastButtonValue = buttonValue;
