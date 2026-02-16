@@ -22,6 +22,13 @@ const int X_PIN = A0;
 const int Y_PIN = A1;
 const int BUTTON_PIN = 7;
 
+enum GameStatus : uint8_t
+{
+  IN_PROGRESS = 0,
+  WON = 1,
+  STALEMATE = 2
+};
+
 struct GameState
 {
   // Board representation
@@ -41,8 +48,14 @@ struct GameState
 
   bool isPlayer1Turn;
 
-  // 0 = none, 1 = X, 2 = O, 3 = stalemate
-  uint8_t winner;
+  // winMask[z], bits 0..15 correspond to board[z][i]
+  // Corresponds to the LEDs that are part of the winning 4-in-a-row(s)
+  uint16_t winMask[4];
+
+  GameStatus status;
+
+  // The game freezes at the end to display the win/stalemate animation
+  unsigned long frozenUntilMs;
 };
 
 static GameState gameState;
@@ -55,6 +68,7 @@ void initializeGameState(GameState &gameState)
     {
       gameState.board[l][i] = 0;
     }
+    gameState.winMask[l] = 0;
   }
 
   // random is min inclusive, max exclusive
@@ -63,7 +77,8 @@ void initializeGameState(GameState &gameState)
   gameState.blinkIsOn = false;
   gameState.lastBlinkMs = 0;
   gameState.isPlayer1Turn = true;
-  gameState.winner = 0;
+  gameState.status = IN_PROGRESS;
+  gameState.frozenUntilMs = 0;
 }
 
 void updateCursorPosition(GameState &gameState)
@@ -124,6 +139,12 @@ uint8_t getValueAtXYZ(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t 
   return board[z][y * 4 + x];
 }
 
+void freezeGame(GameState &gameState)
+{
+  // for game over/stalemate, freeze gameplay for a few seconds to render the game over sequence
+  gameState.frozenUntilMs = millis() + 3000;
+}
+
 uint8_t getStreakLength(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
 {
   // Not counting the starting position as part of the streak,
@@ -153,7 +174,20 @@ uint8_t getStreakLength(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_
   return streakLength;
 }
 
-uint8_t checkForGameOver(const uint8_t board[4][16], uint8_t lastLayer, uint8_t lastPosition)
+bool isStalemate(const uint8_t board[4][16])
+{
+  for (uint8_t layer = 0; layer < 4; layer++)
+  {
+    for (uint8_t i = 0; i < 16; i++)
+    {
+      if (board[layer][i] == 0)
+        return false;
+    }
+  }
+  return true;
+}
+
+void updatePotentialGameOver(GameState &gameState)
 {
   // Don't need to scan for ALL possible 4 in a rows,
   // just need to check if the last played spot makes a 4 in a row
@@ -178,24 +212,56 @@ uint8_t checkForGameOver(const uint8_t board[4][16], uint8_t lastLayer, uint8_t 
       {1, 1, -1},
       {-1, 1, 1}};
 
-  uint8_t x = lastPosition % 4;
-  uint8_t y = lastPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
-  uint8_t z = lastLayer;
-  uint8_t player = getValueAtXYZ(board, x, y, z);
+  uint8_t x = gameState.cursorPosition % 4;
+  uint8_t y = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  uint8_t z = gameState.activeLayer;
+  uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
+
+  bool foundWin = false;
 
   for (uint8_t d = 0; d < 13; d++)
   {
     int dx = DIRECTIONS[d][0];
     int dy = DIRECTIONS[d][1];
     int dz = DIRECTIONS[d][2];
-    uint8_t streakLength = 1 + getStreakLength(board, x, y, z, dx, dy, dz, player) + getStreakLength(board, x, y, z, -dx, -dy, -dz, player);
+    uint8_t positiveStreak = getStreakLength(gameState.board, x, y, z, dx, dy, dz, player);
+    uint8_t negativeStreak = getStreakLength(gameState.board, x, y, z, -dx, -dy, -dz, player);
+
+    uint8_t streakLength = 1 + positiveStreak + negativeStreak;
 
     if (streakLength == 4)
-      return player;
-  }
-  // todo check for stalemate and return 3 if so. stalemate = board full. any other conditions?
+    {
+      uint8_t startX = x - dx * negativeStreak;
+      uint8_t startY = y - dy * negativeStreak;
+      uint8_t startZ = z - dz * negativeStreak;
 
-  return 0; // no winner
+      for (uint8_t step = 0; step < 4; step++)
+      {
+        uint8_t currentX = startX + dx * step;
+        uint8_t currentY = startY + dy * step;
+        uint8_t currentZ = startZ + dz * step;
+        uint8_t currentIndex = currentY * 4 + currentX;
+
+        gameState.winMask[currentZ] |= (1u << (currentIndex));
+      }
+      foundWin = true;
+    }
+  }
+
+  if (foundWin)
+  {
+    gameState.status = WON;
+    freezeGame(gameState);
+  }
+  else if (isStalemate(gameState.board))
+  {
+    gameState.status = STALEMATE;
+    freezeGame(gameState);
+  }
+  else
+  {
+    gameState.status = IN_PROGRESS;
+  }
 }
 
 void updateBoard(GameState &gameState)
@@ -210,7 +276,7 @@ void updateBoard(GameState &gameState)
     gameState.board[gameState.activeLayer][gameState.cursorPosition] = gameState.isPlayer1Turn ? 1 : 2;
 
     // Check for game over (win or stalemate)
-    gameState.winner = checkForGameOver(gameState.board, gameState.activeLayer, gameState.cursorPosition);
+    updatePotentialGameOver(gameState);
 
     // Switch players
     gameState.isPlayer1Turn = !gameState.isPlayer1Turn;
@@ -319,6 +385,55 @@ void renderGame(GameState &gameState)
     currentLayer = 0;
 }
 
+void renderGameOver(GameState &gameState)
+{
+  static const unsigned long BLINK_PERIOD_MS = 200;
+
+  unsigned long now = millis();
+
+  if (now - gameState.lastBlinkMs >= BLINK_PERIOD_MS)
+  {
+    gameState.blinkIsOn = !gameState.blinkIsOn;
+    gameState.lastBlinkMs = now;
+  }
+
+  static int currentLayer = 0;
+
+  uint16_t winMask = gameState.winMask[currentLayer];
+
+  uint8_t maskedLayer[16] = {0};
+
+  if (gameState.blinkIsOn)
+  {
+    for (uint8_t position = 0; position < 16; position++)
+    {
+      bool highlight = winMask & (1u << position);
+      if (highlight)
+      {
+        maskedLayer[position] = gameState.board[currentLayer][position];
+      }
+      else
+      {
+        maskedLayer[position] = 0;
+      }
+    }
+  }
+
+  uint8_t layerBytes[4];
+
+  layerToBytes(maskedLayer, 0, false, layerBytes);
+
+  renderLEDsForLayer(currentLayer, layerBytes);
+
+  // Hold it briefly
+  delayMicroseconds(LAYER_ON_TIME_US);
+
+  // Next layer
+  currentLayer++;
+  if (currentLayer >= NUM_LAYERS)
+    currentLayer = 0;
+}
+
 void setup()
 {
   pinMode(LATCH_PIN, OUTPUT);
@@ -338,22 +453,37 @@ void setup()
 
 void loop()
 {
-  updateCursorPosition(gameState);
+  const unsigned long now = millis();
 
-  updateBoard(gameState);
-
-  if (gameState.winner == 3 || gameState.winner == 1 || gameState.winner == 2)
+  // If frozen for game over, just render and return
+  if (now < gameState.frozenUntilMs)
   {
-
-    // Give a visual indication that the game is over
-    // renderGameOver(gameState); // todo add back
-
-    // Reinitialize the variables for a new game
-    initializeGameState(gameState);
+    if (gameState.status == WON)
+    {
+      // Give a visual indication that the game is over
+      renderGameOver(gameState);
+    }
+    // else if (gameState.status == STALEMATE)
+    // {
+    //   // todo render stalemate
+    // }
   }
   else
   {
-    // no winner yet; render the board
-    renderGame(gameState);
+    if (gameState.status == WON || gameState.status == STALEMATE)
+    {
+      // Reinitialize the variables for a new game
+      initializeGameState(gameState);
+    }
+    else
+    {
+      // game not over; keep playing and render the board
+
+      updateCursorPosition(gameState);
+
+      updateBoard(gameState);
+
+      renderGame(gameState);
+    }
   }
 }
