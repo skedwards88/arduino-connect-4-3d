@@ -1,7 +1,7 @@
 #include "Arduino.h"
 
 // Pins for the first shift register
-const int LATCH_PIN = 8;
+const int LATCH_PIN = 10;
 const int CLOCK_PIN = 12;
 const int DATA_PIN = 11;
 
@@ -18,9 +18,11 @@ const int layerPins[NUM_LAYERS] = {LAYER0_PIN, LAYER1_PIN, LAYER2_PIN, LAYER3_PI
 const unsigned int LAYER_ON_TIME_US = 800;
 
 // Pins for the joystick
-const int X_PIN = A0;
-const int Y_PIN = A1;
-const int BUTTON_PIN = 7;
+const int UP_PIN = 9;
+const int DOWN_PIN = 8;
+const int LEFT_PIN = 7;
+const int RIGHT_PIN = 6;
+const int BUTTON_PIN = A1;
 
 enum GameStatus : uint8_t
 {
@@ -83,18 +85,9 @@ void initializeGameState(GameState &gameState)
 
 void updateCursorPosition(GameState &gameState)
 {
-  // Joystick movement classification
-  static const int LEFT_THRESHOLD = 400;
-  static const int RIGHT_THRESHOLD = 800;
-  static const int UP_THRESHOLD = 400;
-  static const int DOWN_THRESHOLD = 800;
-
   // Prevent the joystick from moving too fast
   static const unsigned long JOYSTICK_LIMITER_MS = 300;
   static unsigned long lastMoveMs = 0;
-
-  int xValue = analogRead(X_PIN);
-  int yValue = analogRead(Y_PIN);
 
   unsigned long now = millis();
 
@@ -106,23 +99,23 @@ void updateCursorPosition(GameState &gameState)
     int newColumn = oldColumn;
     int newRow = oldRow;
 
-    if (xValue < LEFT_THRESHOLD)
+    if (digitalRead(LEFT_PIN) == LOW)
     {
       // moving left
       newColumn = max(0, oldColumn - 1);
     }
-    else if (xValue > RIGHT_THRESHOLD)
+    else if (digitalRead(RIGHT_PIN) == LOW)
     {
       // moving right
       newColumn = min(3, oldColumn + 1);
     }
 
-    if (yValue < UP_THRESHOLD)
+    if (digitalRead(UP_PIN) == LOW)
     {
       // moving up
       newRow = max(0, oldRow - 1);
     }
-    else if (yValue > DOWN_THRESHOLD)
+    else if (digitalRead(DOWN_PIN) == LOW)
     {
       // moving down
       newRow = min(3, oldRow + 1);
@@ -554,8 +547,10 @@ void setup()
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(DATA_PIN, OUTPUT);
-  pinMode(X_PIN, INPUT);
-  pinMode(Y_PIN, INPUT);
+  pinMode(UP_PIN, INPUT_PULLUP);
+  pinMode(DOWN_PIN, INPUT_PULLUP);
+  pinMode(LEFT_PIN, INPUT_PULLUP);
+  pinMode(RIGHT_PIN, INPUT_PULLUP);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   for (int i = 0; i < NUM_LAYERS; i++)
   {
