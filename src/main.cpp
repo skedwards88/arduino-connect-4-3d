@@ -418,7 +418,7 @@ void renderLEDsForLayer(uint8_t layerIndex, uint8_t bytesToRender[4])
 
   digitalWrite(LATCH_PIN, LOW);
 
-  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, bytesToRender[3]); // shift register 3
+  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, bytesToRender[3]); // shift register 4
   shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, bytesToRender[2]); // shift register 3
   shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, bytesToRender[1]); // shift register 2
   shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, bytesToRender[0]); // shift register 1
