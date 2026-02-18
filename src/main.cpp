@@ -17,6 +17,9 @@ const int layerPins[NUM_LAYERS] = {LAYER0_PIN, LAYER1_PIN, LAYER2_PIN, LAYER3_PI
 // Note this is microseconds, not milliseconds
 const unsigned int LAYER_ON_TIME_US = 800;
 
+// Minimum elapsed time between recording joystick input
+const unsigned long JOYSTICK_DEBOUNCE_MS = 50;
+
 // Pins for the joystick
 const int UP_PIN = 9;
 const int DOWN_PIN = 8;
@@ -345,11 +348,16 @@ uint8_t selectRandomEmptyIndex(const uint8_t board[4][16])
 void updateBoard(GameState &gameState)
 {
   static int lastButtonValue = HIGH;
+  static unsigned long lastPressMs = 0;
+
+  unsigned long now = millis();
 
   int buttonValue = digitalRead(BUTTON_PIN);
 
-  if (buttonValue == LOW && lastButtonValue == HIGH && gameState.board[gameState.activeLayer][gameState.cursorPosition] == 0)
+  if (buttonValue == LOW && lastButtonValue == HIGH && gameState.board[gameState.activeLayer][gameState.cursorPosition] == 0 && (now - lastPressMs) > JOYSTICK_DEBOUNCE_MS)
   {
+    lastPressMs = now;
+
     // Update board
     gameState.board[gameState.activeLayer][gameState.cursorPosition] = gameState.isPlayer1Turn ? 1 : 2;
 
