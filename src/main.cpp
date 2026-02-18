@@ -91,37 +91,45 @@ void initializeGameState(GameState &gameState)
 
 void updateCursorPosition(GameState &gameState)
 {
-  // Prevent the joystick from moving too fast
-  static const unsigned long JOYSTICK_LIMITER_MS = 300;
-  static unsigned long lastMoveMs = 0;
+  static unsigned long lastMoveCheckMs = 0;
+  static int lastLeft = HIGH;
+  static int lastRight = HIGH;
+  static int lastUp = HIGH;
+  static int lastDown = HIGH;
 
   unsigned long now = millis();
 
-  if (now - lastMoveMs >= JOYSTICK_LIMITER_MS)
+  if (now - lastMoveCheckMs >= JOYSTICK_DEBOUNCE_MS)
   {
+    lastMoveCheckMs = now;
+
+    int currentLeft = digitalRead(LEFT_PIN);
+    int currentRight = digitalRead(RIGHT_PIN);
+    int currentUp = digitalRead(UP_PIN);
+    int currentDown = digitalRead(DOWN_PIN);
+
     const int oldColumn = gameState.cursorPosition % 4;
     const int oldRow = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
 
     int newColumn = oldColumn;
     int newRow = oldRow;
 
-    if (digitalRead(LEFT_PIN) == LOW)
+    if (currentLeft == LOW && lastLeft == HIGH)
     {
       // moving left
       newColumn = max(0, oldColumn - 1);
     }
-    else if (digitalRead(RIGHT_PIN) == LOW)
+    else if (currentRight == LOW && lastRight == HIGH)
     {
       // moving right
       newColumn = min(3, oldColumn + 1);
     }
-
-    if (digitalRead(UP_PIN) == LOW)
+    else if (currentUp == LOW && lastUp == HIGH)
     {
       // moving up
       newRow = max(0, oldRow - 1);
     }
-    else if (digitalRead(DOWN_PIN) == LOW)
+    else if (currentDown == LOW && lastDown == HIGH)
     {
       // moving down
       newRow = min(3, oldRow + 1);
@@ -129,7 +137,10 @@ void updateCursorPosition(GameState &gameState)
 
     gameState.cursorPosition = (newRow * 4) + newColumn;
 
-    lastMoveMs = now;
+    lastLeft = currentLeft;
+    lastRight = currentRight;
+    lastUp = currentUp;
+    lastDown = currentDown;
   }
 }
 
