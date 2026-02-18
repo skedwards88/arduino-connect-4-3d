@@ -267,16 +267,16 @@ void updatePotentialGameOver(GameState &gameState)
 
     if (streakLength == 4)
     {
-      uint8_t startX = x - dx * negativeStreak;
-      uint8_t startY = y - dy * negativeStreak;
-      uint8_t startZ = z - dz * negativeStreak;
+      int startX = x - dx * negativeStreak;
+      int startY = y - dy * negativeStreak;
+      int startZ = z - dz * negativeStreak;
 
-      for (uint8_t step = 0; step < 4; step++)
+      for (int step = 0; step < 4; step++)
       {
-        uint8_t currentX = startX + dx * step;
-        uint8_t currentY = startY + dy * step;
-        uint8_t currentZ = startZ + dz * step;
-        uint8_t currentIndex = currentY * 4 + currentX;
+        int currentX = startX + dx * step;
+        int currentY = startY + dy * step;
+        int currentZ = startZ + dz * step;
+        int currentIndex = currentY * 4 + currentX;
 
         gameState.winMask[currentZ] |= (1u << (currentIndex));
       }
@@ -287,19 +287,19 @@ void updatePotentialGameOver(GameState &gameState)
     uint8_t negativeNumFlanked = getNumFlanked(gameState.board, x, y, z, -dx, -dy, -dz, player);
     for (uint8_t step = 1; step <= positiveNumFlanked; step++)
     {
-      uint8_t currentX = x + dx * step;
-      uint8_t currentY = y + dy * step;
-      uint8_t currentZ = z + dz * step;
-      uint8_t currentIndex = currentY * 4 + currentX;
+      int currentX = x + dx * step;
+      int currentY = y + dy * step;
+      int currentZ = z + dz * step;
+      int currentIndex = currentY * 4 + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
     }
-    for (uint8_t step = 1; step <= negativeNumFlanked; step++)
+    for (int step = 1; step <= negativeNumFlanked; step++)
     {
-      uint8_t currentX = x - dx * step;
-      uint8_t currentY = y - dy * step;
-      uint8_t currentZ = z - dz * step;
-      uint8_t currentIndex = currentY * 4 + currentX;
+      int currentX = x - dx * step;
+      int currentY = y - dy * step;
+      int currentZ = z - dz * step;
+      int currentIndex = currentY * 4 + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
     }
