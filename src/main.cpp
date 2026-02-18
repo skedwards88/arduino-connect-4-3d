@@ -356,15 +356,17 @@ void updateBoard(GameState &gameState)
     // Check for game over (win or stalemate)
     updatePotentialGameOver(gameState);
 
-    // Switch players
-    gameState.isPlayer1Turn = !gameState.isPlayer1Turn;
+    if (gameState.status == IN_PROGRESS)
+    {
+      // Switch players
+      gameState.isPlayer1Turn = !gameState.isPlayer1Turn;
 
-    // Choose a new layer and position
-    uint8_t nextIndex = selectRandomEmptyIndex(gameState.board);
-    gameState.activeLayer = nextIndex / 16;
-    gameState.cursorPosition = nextIndex % 16;
+      // Choose a new layer and position
+      uint8_t nextIndex = selectRandomEmptyIndex(gameState.board);
+      gameState.activeLayer = nextIndex / 16;
+      gameState.cursorPosition = nextIndex % 16;
+    }
   }
-
   lastButtonValue = buttonValue;
 }
 
