@@ -73,6 +73,9 @@ void initializeGameState(GameState &gameState)
     gameState.winMask[l] = 0;
   }
 
+  // initialize the pseudo-random number generator
+  randomSeed(analogRead(A4)); // Note: this should use a floating/unused pin
+
   // random is min inclusive, max exclusive
   gameState.activeLayer = random(0, 4);
   gameState.cursorPosition = random(0, 16);
