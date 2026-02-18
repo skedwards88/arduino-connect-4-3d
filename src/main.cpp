@@ -146,6 +146,7 @@ uint8_t getNumFlanked(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t 
 {
   uint8_t opponentStreak = 0;
   bool isFlanked = false;
+  uint8_t opponent = (player == 1) ? 2 : 1;
 
   for (uint8_t step = 1; step < 4; step++)
   {
@@ -161,19 +162,21 @@ uint8_t getNumFlanked(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t 
 
     uint8_t value = getValueAtXYZ(board, x2, y2, z2);
 
-    // stop if empty spot
-    if (value == 0)
+    if (value == opponent)
     {
-      break;
+      opponentStreak++;
     }
-
     // stop if same color as player, but toggle isFlanked
-    if (value == player)
+    else if (value == player)
     {
       isFlanked = true;
       break;
     }
-    opponentStreak++;
+    else
+    {
+      // stop if empty spot (or for any other case)
+      break;
+    }
   }
   return isFlanked ? opponentStreak : 0;
 }
