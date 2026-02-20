@@ -61,6 +61,11 @@ struct GameState
 
   // The game freezes at the end to display the win/stalemate animation
   unsigned long frozenUntilMs;
+
+  // Cache the bytes to display for each layer
+  // since the bytes are rendered much more frequently than they change
+  uint8_t cachedLayerBytes[4][4];
+  bool cacheIsDirty[4];
 };
 
 static GameState gameState;
@@ -73,7 +78,12 @@ void initializeGameState(GameState &gameState)
     {
       gameState.board[l][i] = 0;
     }
+    for (int b = 0; b < 4; b++)
+    {
+      gameState.cachedLayerBytes[l][b] = 0;
+    }
     gameState.winMask[l] = 0;
+    gameState.cacheIsDirty[l] = true;
   }
 
   // initialize the pseudo-random number generator
@@ -135,7 +145,11 @@ void updateCursorPosition(GameState &gameState)
       newRow = min(3, oldRow + 1);
     }
 
-    gameState.cursorPosition = (newRow * 4) + newColumn;
+    if (newRow != oldRow || newColumn != oldColumn)
+    {
+      gameState.cursorPosition = (newRow * 4) + newColumn;
+      gameState.cacheIsDirty[gameState.activeLayer] = true;
+    }
 
     lastLeft = currentLeft;
     lastRight = currentRight;
@@ -307,6 +321,7 @@ void updatePotentialGameOver(GameState &gameState)
       int currentIndex = currentY * 4 + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
+      gameState.cacheIsDirty[currentZ] = true;
     }
     for (int step = 1; step <= negativeNumFlanked; step++)
     {
@@ -316,17 +331,26 @@ void updatePotentialGameOver(GameState &gameState)
       int currentIndex = currentY * 4 + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
+      gameState.cacheIsDirty[currentZ] = true;
     }
   }
 
   if (foundWin)
   {
     gameState.status = WON;
+    for (int l = 0; l < 4; l++)
+    {
+      gameState.cacheIsDirty[l] = true;
+    }
     freezeGame(gameState);
   }
   else if (isStalemate(gameState.board))
   {
     gameState.status = STALEMATE;
+    for (int l = 0; l < 4; l++)
+    {
+      gameState.cacheIsDirty[l] = true;
+    }
     freezeGame(gameState);
   }
   else
@@ -371,6 +395,7 @@ void updateBoard(GameState &gameState)
 
     // Update board
     gameState.board[gameState.activeLayer][gameState.cursorPosition] = gameState.isPlayer1Turn ? 1 : 2;
+    gameState.cacheIsDirty[gameState.activeLayer] = true;
 
     // Check for game over (win or stalemate)
     updatePotentialGameOver(gameState);
@@ -449,11 +474,7 @@ void renderLEDsForLayer(uint8_t layerIndex, uint8_t bytesToRender[4])
   digitalWrite(layerPins[layerIndex], HIGH);
 }
 
-// Refreshes one layer when called
-// Should call as often as possible
-// todo should probably separate out the logic from the actual rendering
-// e.g. currentLayer and incrementation, renderLEDsForLayer, delayMicroseconds gets called fast and frequent, but the blink stuff and layerToBytes stuff doesn't
-void renderGame(GameState &gameState)
+void updateBlink(GameState &gameState)
 {
   static const unsigned long BLINK_PERIOD_MS = 200;
 
@@ -463,17 +484,40 @@ void renderGame(GameState &gameState)
   {
     gameState.blinkIsOn = !gameState.blinkIsOn;
     gameState.lastBlinkMs = now;
+    if (gameState.status == IN_PROGRESS)
+    {
+      gameState.cacheIsDirty[gameState.activeLayer] = true;
+    }
+    else
+    {
+      for (uint8_t l = 0; l < 4; l++)
+      {
+        gameState.cacheIsDirty[l] = true;
+      }
+    }
   }
+}
 
+// Refreshes one layer when called
+// Should call as often as possible
+void renderGame(GameState &gameState)
+{
   static int currentLayer = 0;
 
-  bool blinkForThisLayer = (currentLayer == gameState.activeLayer) && gameState.blinkIsOn;
+  if (gameState.cacheIsDirty[currentLayer])
+  {
+    bool blinkForThisLayer = (currentLayer == gameState.activeLayer) && gameState.blinkIsOn;
 
-  uint8_t layerBytes[4];
+    layerToBytes(gameState.board[currentLayer], gameState.cursorPosition, blinkForThisLayer, gameState.cachedLayerBytes[currentLayer]);
 
-  layerToBytes(gameState.board[currentLayer], gameState.cursorPosition, blinkForThisLayer, layerBytes);
+    gameState.cacheIsDirty[currentLayer] = false;
 
-  renderLEDsForLayer(currentLayer, layerBytes);
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
+  }
+  else
+  {
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
+  }
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
@@ -486,43 +530,40 @@ void renderGame(GameState &gameState)
 
 void renderGameOver(GameState &gameState)
 {
-  static const unsigned long BLINK_PERIOD_MS = 200;
-
-  unsigned long now = millis();
-
-  if (now - gameState.lastBlinkMs >= BLINK_PERIOD_MS)
-  {
-    gameState.blinkIsOn = !gameState.blinkIsOn;
-    gameState.lastBlinkMs = now;
-  }
-
   static int currentLayer = 0;
 
-  uint16_t winMask = gameState.winMask[currentLayer];
-
-  uint8_t maskedLayer[16] = {0};
-
-  if (gameState.blinkIsOn)
+  if (gameState.cacheIsDirty[currentLayer])
   {
-    for (uint8_t position = 0; position < 16; position++)
+    uint16_t winMask = gameState.winMask[currentLayer];
+
+    uint8_t maskedLayer[16] = {0};
+
+    if (gameState.blinkIsOn)
     {
-      bool highlight = winMask & (1u << position);
-      if (highlight)
+      for (uint8_t position = 0; position < 16; position++)
       {
-        maskedLayer[position] = gameState.board[currentLayer][position];
-      }
-      else
-      {
-        maskedLayer[position] = 0;
+        bool highlight = winMask & (1u << position);
+        if (highlight)
+        {
+          maskedLayer[position] = gameState.board[currentLayer][position];
+        }
+        else
+        {
+          maskedLayer[position] = 0;
+        }
       }
     }
+
+    layerToBytes(maskedLayer, 0, false, gameState.cachedLayerBytes[currentLayer]);
+
+    gameState.cacheIsDirty[currentLayer] = false;
+
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
   }
-
-  uint8_t layerBytes[4];
-
-  layerToBytes(maskedLayer, 0, false, layerBytes);
-
-  renderLEDsForLayer(currentLayer, layerBytes);
+  else
+  {
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
+  }
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
@@ -535,30 +576,28 @@ void renderGameOver(GameState &gameState)
 
 void renderStalemate(GameState &gameState)
 {
-  static const unsigned long BLINK_PERIOD_MS = 200;
-
-  unsigned long now = millis();
-
-  if (now - gameState.lastBlinkMs >= BLINK_PERIOD_MS)
-  {
-    gameState.blinkIsOn = !gameState.blinkIsOn;
-    gameState.lastBlinkMs = now;
-  }
-
   static int currentLayer = 0;
 
-  uint8_t layerValues[16];
-
-  for (int i = 0; i < 16; i++)
+  if (gameState.cacheIsDirty[currentLayer])
   {
-    layerValues[i] = gameState.blinkIsOn ? 1 : 2;
+
+    uint8_t layerValues[16];
+
+    for (int i = 0; i < 16; i++)
+    {
+      layerValues[i] = gameState.blinkIsOn ? 1 : 2;
+    }
+
+    layerToBytes(layerValues, 0, false, gameState.cachedLayerBytes[currentLayer]);
+
+    gameState.cacheIsDirty[currentLayer] = false;
+
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
   }
-
-  uint8_t layerBytes[4];
-
-  layerToBytes(layerValues, 0, false, layerBytes);
-
-  renderLEDsForLayer(currentLayer, layerBytes);
+  else
+  {
+    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
+  }
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
@@ -591,6 +630,8 @@ void setup()
 void loop()
 {
   const unsigned long now = millis();
+
+  updateBlink(gameState);
 
   // If frozen for game over, just render and return
   if (now < gameState.frozenUntilMs)
