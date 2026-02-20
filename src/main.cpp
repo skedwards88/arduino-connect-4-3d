@@ -459,7 +459,7 @@ void renderLEDsForLayer(uint8_t layerIndex, uint8_t bytesToRender[4])
 
 void updateBlink(GameState &gameState)
 {
-  static const unsigned long BLINK_PERIOD_MS = 200;
+  static const unsigned long BLINK_PERIOD_MS = 350;
 
   unsigned long now = millis();
 
