@@ -422,39 +422,22 @@ void disableAllLayers()
   }
 }
 
-void layerToBytes(uint8_t layer[16], uint8_t cursorPosition, bool blinkIsOn, uint8_t outBytes[4])
+void setBytes(uint8_t position, bool color1IsOn, bool color2IsOn, uint8_t outBytes[4])
 {
-  // To send to the 4 shift registers that control the LEDs
-  outBytes[0] = outBytes[1] = outBytes[2] = outBytes[3] = 0;
+  // On the board, the bicolor LEDs are wired to the shift registers in alternating color order
+  // (LED 1 color 1 pin, LED 1 color 2 pin, LED 2 color 1 pin, ...)
+  // so color 1 pins are even and color2 pins are odd
+  uint8_t color1BitIndex = position * 2;     // 0, 2, ...30
+  uint8_t color2BitIndex = position * 2 + 1; // 1, 3, ...31
 
-  for (uint8_t i = 0; i < 16; i++)
+  // Use |= instead of = to write just that bit in the byte
+  if (color1IsOn)
   {
-    // State 0 = empty, 1 = Player 1, 2 = Player 2
-    bool color1IsOn = (layer[i] == 1);
-    bool color2IsOn = (layer[i] == 2);
-
-    // If blinking, both are on regardless
-    if (i == cursorPosition && blinkIsOn)
-    {
-      color1IsOn = true;
-      color2IsOn = true;
-    }
-
-    // On the board, the bicolor LEDs are wired to the shift registers in alternating color order
-    // (LED 1 color 1 pin, LED 1 color 2 pin, LED 2 color 1 pin, ...)
-    // so color 1 pins are even and color2 pins are odd
-    uint8_t color1BitIndex = i * 2;     // 0, 2, ...30
-    uint8_t color2BitIndex = i * 2 + 1; // 1, 3, ...31
-
-    // Use |= instead of = to write just that bit in the byte
-    if (color1IsOn)
-    {
-      outBytes[color1BitIndex / 8] |= (1u << (color1BitIndex % 8));
-    }
-    if (color2IsOn)
-    {
-      outBytes[color2BitIndex / 8] |= (1u << (color2BitIndex % 8));
-    }
+    outBytes[color1BitIndex / 8] |= (1u << (color1BitIndex % 8));
+  }
+  if (color2IsOn)
+  {
+    outBytes[color2BitIndex / 8] |= (1u << (color2BitIndex % 8));
   }
 }
 
@@ -506,18 +489,34 @@ void renderGame(GameState &gameState)
 
   if (gameState.cacheIsDirty[currentLayer])
   {
+    // clear the cached bytes
+    for (uint8_t i = 0; i < 4; i++)
+    {
+      gameState.cachedLayerBytes[currentLayer][i] = 0;
+    }
+
     bool blinkForThisLayer = (currentLayer == gameState.activeLayer) && gameState.blinkIsOn;
 
-    layerToBytes(gameState.board[currentLayer], gameState.cursorPosition, blinkForThisLayer, gameState.cachedLayerBytes[currentLayer]);
+    for (uint8_t i = 0; i < 16; i++)
+    {
+      // State 0 = empty, 1 = Player 1, 2 = Player 2
+      bool color1IsOn = (gameState.board[currentLayer][i] == 1);
+      bool color2IsOn = (gameState.board[currentLayer][i] == 2);
+
+      // If blinking, both are on regardless
+      if (i == gameState.cursorPosition && blinkForThisLayer)
+      {
+        color1IsOn = true;
+        color2IsOn = true;
+      }
+
+      setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
+    }
 
     gameState.cacheIsDirty[currentLayer] = false;
+  }
 
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
-  else
-  {
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
+  renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
@@ -534,36 +533,31 @@ void renderGameOver(GameState &gameState)
 
   if (gameState.cacheIsDirty[currentLayer])
   {
+    // clear the cached bytes
+    for (uint8_t i = 0; i < 4; i++)
+    {
+      gameState.cachedLayerBytes[currentLayer][i] = 0;
+    }
+
     uint16_t winMask = gameState.winMask[currentLayer];
 
-    uint8_t maskedLayer[16] = {0};
-
-    if (gameState.blinkIsOn)
+    for (uint8_t i = 0; i < 16; i++)
     {
-      for (uint8_t position = 0; position < 16; position++)
+      bool highlight = winMask & (1u << i);
+      if (highlight || !gameState.blinkIsOn)
       {
-        bool highlight = winMask & (1u << position);
-        if (highlight)
-        {
-          maskedLayer[position] = gameState.board[currentLayer][position];
-        }
-        else
-        {
-          maskedLayer[position] = 0;
-        }
+        // State 0 = empty, 1 = Player 1, 2 = Player 2
+        bool color1IsOn = (gameState.board[currentLayer][i] == 1);
+        bool color2IsOn = (gameState.board[currentLayer][i] == 2);
+
+        setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
       }
     }
 
-    layerToBytes(maskedLayer, 0, false, gameState.cachedLayerBytes[currentLayer]);
-
     gameState.cacheIsDirty[currentLayer] = false;
+  }
 
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
-  else
-  {
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
+  renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
@@ -580,24 +574,28 @@ void renderStalemate(GameState &gameState)
 
   if (gameState.cacheIsDirty[currentLayer])
   {
-
-    uint8_t layerValues[16];
-
-    for (int i = 0; i < 16; i++)
+    // clear the cached bytes
+    for (uint8_t i = 0; i < 4; i++)
     {
-      layerValues[i] = gameState.blinkIsOn ? 1 : 2;
+      gameState.cachedLayerBytes[currentLayer][i] = 0;
     }
 
-    layerToBytes(layerValues, 0, false, gameState.cachedLayerBytes[currentLayer]);
+    if (gameState.blinkIsOn)
+    {
+      for (uint8_t i = 0; i < 16; i++)
+      {
+        // State 0 = empty, 1 = Player 1, 2 = Player 2
+        bool color1IsOn = (gameState.board[currentLayer][i] == 1);
+        bool color2IsOn = (gameState.board[currentLayer][i] == 2);
+
+        setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
+      }
+    }
 
     gameState.cacheIsDirty[currentLayer] = false;
+  }
 
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
-  else
-  {
-    renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-  }
+  renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
 
   // Hold it briefly
   delayMicroseconds(LAYER_ON_TIME_US);
