@@ -172,8 +172,8 @@ void initializeGameState(GameState &gameState)
   // gameState.board[1][3] = 2;
   // gameState.board[2][3] = 2;
   // gameState.board[3][3] = 1;
-  // gameState.activeLayer = 0;
-  // gameState.cursorPosition = 3;
+  // gameState.activeLayer = 3;
+  // gameState.cursorPosition = 1;
 
   // todo just for testing to get the board closer to stalemate
   // for (int l = 0; l < NUM_LAYERS; l++)
@@ -207,8 +207,8 @@ void updateCursorPosition(GameState &gameState)
     int currentUp = digitalRead(UP_PIN);
     int currentDown = digitalRead(DOWN_PIN);
 
-    const int oldColumn = gameState.cursorPosition % NUM_LAYERS;
-    const int oldRow = gameState.cursorPosition / NUM_LAYERS; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+    const int oldColumn = gameState.cursorPosition % GRID_DIMENSION;
+    const int oldRow = gameState.cursorPosition / GRID_DIMENSION; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
 
     int newColumn = oldColumn;
     int newRow = oldRow;
@@ -236,7 +236,7 @@ void updateCursorPosition(GameState &gameState)
 
     if (newRow != oldRow || newColumn != oldColumn)
     {
-      gameState.cursorPosition = (newRow * NUM_LAYERS) + newColumn;
+      gameState.cursorPosition = (newRow * GRID_DIMENSION) + newColumn;
       gameState.cacheIsDirty[gameState.activeLayer] = true;
     }
 
@@ -249,7 +249,7 @@ void updateCursorPosition(GameState &gameState)
 
 uint8_t getValueAtXYZ(const uint8_t board[NUM_LAYERS][NUM_POSITIONS], int x, int y, int z)
 {
-  return board[z][y * NUM_LAYERS + x];
+  return board[z][y * GRID_DIMENSION + x];
 }
 
 void freezeGame(GameState &gameState)
@@ -348,8 +348,8 @@ bool isStalemate(const uint8_t board[NUM_LAYERS][NUM_POSITIONS])
 
 void updatePotentialCaptures(GameState &gameState)
 {
-  int x = gameState.cursorPosition % NUM_LAYERS;
-  int y = gameState.cursorPosition / NUM_LAYERS; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  int x = gameState.cursorPosition % GRID_DIMENSION;
+  int y = gameState.cursorPosition / GRID_DIMENSION; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
   int z = gameState.activeLayer;
   uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
 
@@ -368,7 +368,7 @@ void updatePotentialCaptures(GameState &gameState)
       int currentX = x + dx * step;
       int currentY = y + dy * step;
       int currentZ = z + dz * step;
-      int currentIndex = currentY * NUM_LAYERS + currentX;
+      int currentIndex = currentY * GRID_DIMENSION + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
       // todo clearing as we go affects cases where a piece is part of a double capture -- not sure if that is possible i a 4x4 though. but would still be better to calculate first and delete later
@@ -380,7 +380,7 @@ void updatePotentialCaptures(GameState &gameState)
       int currentX = x - dx * step;
       int currentY = y - dy * step;
       int currentZ = z - dz * step;
-      int currentIndex = currentY * NUM_LAYERS + currentX;
+      int currentIndex = currentY * GRID_DIMENSION + currentX;
 
       gameState.board[currentZ][currentIndex] = 0;
       gameState.cacheIsDirty[currentZ] = true;
@@ -390,8 +390,8 @@ void updatePotentialCaptures(GameState &gameState)
 
 void updatePotentialGameOver(GameState &gameState)
 {
-  int x = gameState.cursorPosition % NUM_LAYERS;
-  int y = gameState.cursorPosition / NUM_LAYERS; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  int x = gameState.cursorPosition % GRID_DIMENSION;
+  int y = gameState.cursorPosition / GRID_DIMENSION; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
   int z = gameState.activeLayer;
   uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
 
