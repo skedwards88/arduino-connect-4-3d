@@ -566,7 +566,7 @@ void updateBlink(GameState &gameState)
 // Should call as often as possible
 void renderGame(GameState &gameState)
 {
-  static int currentLayer = 0;
+  static uint8_t currentLayer = 0;
 
   if (gameState.cacheIsDirty[currentLayer])
   {
@@ -576,118 +576,62 @@ void renderGame(GameState &gameState)
       gameState.cachedLayerBytes[currentLayer][i] = 0;
     }
 
-    for (uint8_t i = 0; i < 16; i++)
+    for (uint8_t position = 0; position < 16; position++)
     {
       bool color1IsOn = false;
       bool color2IsOn = false;
 
-      // For the cursor position,
-      // blink on = player color
-      // blink off = bicolor if space is occupied, off otherwise
-      if (i == gameState.cursorPosition && currentLayer == gameState.activeLayer)
+      if (gameState.status == IN_PROGRESS)
       {
-        if (gameState.blinkIsOn)
+        // For the cursor position,
+        // blink on = player color
+        // blink off = bicolor if space is occupied, off otherwise
+        if (position == gameState.cursorPosition && currentLayer == gameState.activeLayer)
         {
-          color1IsOn = gameState.isPlayer1Turn;
-          color2IsOn = !gameState.isPlayer1Turn;
-        }
-        else
-        {
-          if (gameState.board[currentLayer][i])
+          if (gameState.blinkIsOn)
           {
-            color1IsOn = true;
-            color2IsOn = true;
+            color1IsOn = gameState.isPlayer1Turn;
+            color2IsOn = !gameState.isPlayer1Turn;
+          }
+          else
+          {
+            if (gameState.board[currentLayer][position] != 0)
+            {
+              color1IsOn = true;
+              color2IsOn = true;
+            }
           }
         }
+        // For non-cursor position, just show what has been placed
+        else
+        {
+          color1IsOn = (gameState.board[currentLayer][position] == 1);
+          color2IsOn = (gameState.board[currentLayer][position] == 2);
+        }
       }
-      else
+      else if (gameState.status == WON)
       {
-        color1IsOn = (gameState.board[currentLayer][i] == 1);
-        color2IsOn = (gameState.board[currentLayer][i] == 2);
+        // When blink is on, only show winning 4-in-a-row(s)
+        // When blink is off, show the full board
+        bool highlight = (gameState.winMask[currentLayer] & (1u << position)) != 0;
+        if (highlight || !gameState.blinkIsOn)
+        {
+          color1IsOn = (gameState.board[currentLayer][position] == 1);
+          color2IsOn = (gameState.board[currentLayer][position] == 2);
+        }
       }
-
-      setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
-    }
-
-    gameState.cacheIsDirty[currentLayer] = false;
-  }
-
-  renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-
-  // Hold it briefly
-  delayMicroseconds(LAYER_ON_TIME_US);
-
-  // Next layer
-  currentLayer++;
-  if (currentLayer >= NUM_LAYERS)
-    currentLayer = 0;
-}
-
-void renderGameOver(GameState &gameState)
-{
-  static int currentLayer = 0;
-
-  if (gameState.cacheIsDirty[currentLayer])
-  {
-    // clear the cached bytes
-    for (uint8_t i = 0; i < 4; i++)
-    {
-      gameState.cachedLayerBytes[currentLayer][i] = 0;
-    }
-
-    // When blink is on, only show winning 4-in-a-row(s)
-    // When blink is off, show the full board
-    for (uint8_t i = 0; i < 16; i++)
-    {
-      bool highlight = gameState.winMask[currentLayer] & (1u << i);
-      if (highlight || !gameState.blinkIsOn)
+      else if (gameState.status == STALEMATE)
       {
-        // State 0 = empty, 1 = Player 1, 2 = Player 2
-        bool color1IsOn = (gameState.board[currentLayer][i] == 1);
-        bool color2IsOn = (gameState.board[currentLayer][i] == 2);
-
-        setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
+        // When blink is on, show the full board
+        // Otherwise, everything is off
+        if (gameState.blinkIsOn)
+        {
+          color1IsOn = (gameState.board[currentLayer][position] == 1);
+          color2IsOn = (gameState.board[currentLayer][position] == 2);
+        }
       }
-    }
 
-    gameState.cacheIsDirty[currentLayer] = false;
-  }
-
-  renderLEDsForLayer(currentLayer, gameState.cachedLayerBytes[currentLayer]);
-
-  // Hold it briefly
-  delayMicroseconds(LAYER_ON_TIME_US);
-
-  // Next layer
-  currentLayer++;
-  if (currentLayer >= NUM_LAYERS)
-    currentLayer = 0;
-}
-
-void renderStalemate(GameState &gameState)
-{
-  static int currentLayer = 0;
-
-  if (gameState.cacheIsDirty[currentLayer])
-  {
-    // clear the cached bytes
-    for (uint8_t i = 0; i < 4; i++)
-    {
-      gameState.cachedLayerBytes[currentLayer][i] = 0;
-    }
-
-    // When blink is on, show the full board
-    // Otherwise, everything is off
-    if (gameState.blinkIsOn)
-    {
-      for (uint8_t i = 0; i < 16; i++)
-      {
-        // State 0 = empty, 1 = Player 1, 2 = Player 2
-        bool color1IsOn = (gameState.board[currentLayer][i] == 1);
-        bool color2IsOn = (gameState.board[currentLayer][i] == 2);
-
-        setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
-      }
+      setBytes(position, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
     }
 
     gameState.cacheIsDirty[currentLayer] = false;
@@ -735,32 +679,19 @@ void loop()
   // If frozen for game over, just render and return
   if (now < gameState.frozenUntilMs)
   {
-    if (gameState.status == WON)
-    {
-      // Give a visual indication that the game is over
-      renderGameOver(gameState);
-    }
-    else if (gameState.status == STALEMATE)
-    {
-      renderStalemate(gameState);
-    }
+    renderGame(gameState);
+    return;
   }
-  else
+
+  // If not frozen and game is over, reinitialize and return
+  // (This happens right after the game over freeze ends)
+  if (gameState.status == WON || gameState.status == STALEMATE)
   {
-    if (gameState.status == WON || gameState.status == STALEMATE)
-    {
-      // Reinitialize the variables for a new game
-      initializeGameState(gameState);
-    }
-    else
-    {
-      // game not over; keep playing and render the board
-
-      updateCursorPosition(gameState);
-
-      updateBoard(gameState);
-
-      renderGame(gameState);
-    }
+    initializeGameState(gameState);
+    return;
   }
+
+  updateCursorPosition(gameState);
+  updateBoard(gameState);
+  renderGame(gameState);
 }
