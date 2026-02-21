@@ -436,9 +436,9 @@ void updatePotentialGameOver(GameState &gameState)
         int currentX = startX + dx * step;
         int currentY = startY + dy * step;
         int currentZ = startZ + dz * step;
-        int currentIndex = currentY * GRID_DIMENSION + currentX;
+        int currentPosition = currentY * GRID_DIMENSION + currentX;
 
-        gameState.winMask[currentZ] |= (1u << (currentIndex));
+        gameState.winMask[currentZ] |= (1u << (currentPosition));
       }
       foundWin = true;
     }
