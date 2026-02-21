@@ -683,6 +683,9 @@ void renderStalemate(GameState &gameState)
 
 void setup()
 {
+  // initialize the pseudo-random number generator
+  randomSeed(analogRead(A4)); // Note: this should use a floating/unused pin
+
   pinMode(LATCH_PIN, OUTPUT);
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(DATA_PIN, OUTPUT);
