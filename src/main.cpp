@@ -1,5 +1,12 @@
 #include "Arduino.h"
 
+// todo be consistent about brackets around if statements
+// todo conslidate rendergame, rendergameover, renderstalemate?
+// todo split flanked capture stuff out of update potential game over, or rename function
+// todo vars for num layers etc instead of hardcoding 4
+// todo better vars than i,b,l for loops
+// todo figure out how to write tests because that would have made a lot of code clean up easier
+
 // Pins for the first shift register
 const int LATCH_PIN = 10;
 const int CLOCK_PIN = 12;
@@ -97,6 +104,57 @@ void initializeGameState(GameState &gameState)
   gameState.isPlayer1Turn = true;
   gameState.status = IN_PROGRESS;
   gameState.frozenUntilMs = 0;
+
+  // todo just for testing to get the board closer to game over
+  // gameState.board[0][1] = 1;
+  // gameState.board[1][1] = 1;
+  // gameState.board[2][1] = 1;
+  // gameState.board[3][3] = 1;
+  // gameState.board[3][2] = 1;
+  // gameState.board[3][0] = 1;
+  // gameState.board[0][2] = 2;
+  // gameState.board[1][2] = 2;
+  // gameState.board[2][2] = 2;
+  // gameState.activeLayer = 3;
+  // gameState.cursorPosition = 1;
+  // // fuller board
+  // gameState.board[2][0] = 2;
+  // gameState.board[2][3] = 1;
+  // gameState.board[1][0] = 2;
+  // gameState.board[1][3] = 1;
+  // gameState.board[0][3] = 1;
+  // gameState.board[0][0] = 2;
+  // gameState.board[1][4] = 2;
+  // gameState.board[1][5] = 1;
+  // gameState.board[0][6] = 1;
+  // gameState.board[0][7] = 2;
+  // gameState.board[0][8] = 1;
+  // gameState.board[1][9] = 1;
+  // gameState.board[2][10] = 1;
+  // gameState.board[3][13] = 1;
+  // gameState.board[3][12] = 1;
+  // gameState.board[3][10] = 1;
+  // gameState.board[0][12] = 2;
+  // gameState.board[1][12] = 2;
+  // gameState.board[2][12] = 2;
+
+  // todo just for testing capture
+  // gameState.board[0][0] = 1;
+  // gameState.board[0][1] = 2;
+  // gameState.board[0][2] = 2;
+  // gameState.activeLayer = 0;
+
+  // todo just for testing to get the board closer to stalemate
+  // for (int l = 0; l < 4; l++)
+  // {
+  //   for (int i = 0; i < 16; i++)
+  //   {
+  //     gameState.board[l][i] = 2;
+  //   }
+  // }
+  // gameState.board[0][2] = 0;
+  // gameState.activeLayer = 0;
+  // gameState.cursorPosition = 2;
 }
 
 void updateCursorPosition(GameState &gameState)
@@ -495,19 +553,34 @@ void renderGame(GameState &gameState)
       gameState.cachedLayerBytes[currentLayer][i] = 0;
     }
 
-    bool blinkForThisLayer = (currentLayer == gameState.activeLayer) && gameState.blinkIsOn;
-
     for (uint8_t i = 0; i < 16; i++)
     {
-      // State 0 = empty, 1 = Player 1, 2 = Player 2
-      bool color1IsOn = (gameState.board[currentLayer][i] == 1);
-      bool color2IsOn = (gameState.board[currentLayer][i] == 2);
+      bool color1IsOn = false;
+      bool color2IsOn = false;
 
-      // If blinking, both are on regardless
-      if (i == gameState.cursorPosition && blinkForThisLayer)
+      // For the cursor position,
+      // blink on = player color
+      // blink off = bicolor if space is occupied, off otherwise
+      if (i == gameState.cursorPosition && currentLayer == gameState.activeLayer)
       {
-        color1IsOn = true;
-        color2IsOn = true;
+        if (gameState.blinkIsOn)
+        {
+          color1IsOn = gameState.isPlayer1Turn;
+          color2IsOn = !gameState.isPlayer1Turn;
+        }
+        else
+        {
+          if (gameState.board[currentLayer][i])
+          {
+            color1IsOn = true;
+            color2IsOn = true;
+          }
+        }
+      }
+      else
+      {
+        color1IsOn = (gameState.board[currentLayer][i] == 1);
+        color2IsOn = (gameState.board[currentLayer][i] == 2);
       }
 
       setBytes(i, color1IsOn, color2IsOn, gameState.cachedLayerBytes[currentLayer]);
@@ -539,11 +612,11 @@ void renderGameOver(GameState &gameState)
       gameState.cachedLayerBytes[currentLayer][i] = 0;
     }
 
-    uint16_t winMask = gameState.winMask[currentLayer];
-
+    // When blink is on, only show winning 4-in-a-row(s)
+    // When blink is off, show the full board
     for (uint8_t i = 0; i < 16; i++)
     {
-      bool highlight = winMask & (1u << i);
+      bool highlight = gameState.winMask[currentLayer] & (1u << i);
       if (highlight || !gameState.blinkIsOn)
       {
         // State 0 = empty, 1 = Player 1, 2 = Player 2
@@ -580,6 +653,8 @@ void renderStalemate(GameState &gameState)
       gameState.cachedLayerBytes[currentLayer][i] = 0;
     }
 
+    // When blink is on, show the full board
+    // Otherwise, everything is off
     if (gameState.blinkIsOn)
     {
       for (uint8_t i = 0; i < 16; i++)
