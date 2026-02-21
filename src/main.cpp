@@ -1,10 +1,9 @@
 #include "Arduino.h"
 
-// todo be consistent about brackets around if statements
-// todo conslidate rendergame, rendergameover, renderstalemate?
-// todo split flanked capture stuff out of update potential game over, or rename function
 // todo vars for num layers etc instead of hardcoding 4
 // todo better vars than i,b,l for loops
+// todo be consistent about brackets around if statements
+// todo split flanked capture stuff out of update potential game over, or rename function
 // todo figure out how to write tests because that would have made a lot of code clean up easier
 
 // Pins for the first shift register
@@ -213,7 +212,7 @@ void updateCursorPosition(GameState &gameState)
   }
 }
 
-uint8_t getValueAtXYZ(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z)
+uint8_t getValueAtXYZ(const uint8_t board[4][16], int x, int y, int z)
 {
   return board[z][y * 4 + x];
 }
@@ -225,7 +224,7 @@ void freezeGame(GameState &gameState)
 }
 
 // Return 0,1,2 to indicate the number of opponent pieces that are flanked in the given dxyz direction
-uint8_t getNumFlanked(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
+uint8_t getNumFlanked(const uint8_t board[4][16], int x, int y, int z, int dx, int dy, int dz, uint8_t player)
 {
   uint8_t opponentStreak = 0;
   bool isFlanked = false;
@@ -264,7 +263,7 @@ uint8_t getNumFlanked(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t 
   return isFlanked ? opponentStreak : 0;
 }
 
-uint8_t getStreakLength(const uint8_t board[4][16], uint8_t x, uint8_t y, uint8_t z, int dx, int dy, int dz, uint8_t player)
+uint8_t getStreakLength(const uint8_t board[4][16], int x, int y, int z, int dx, int dy, int dz, uint8_t player)
 {
   // Not counting the starting position as part of the streak,
   // since will call this for both directions,
@@ -331,9 +330,9 @@ void updatePotentialGameOver(GameState &gameState)
       {1, 1, -1},
       {-1, 1, 1}};
 
-  uint8_t x = gameState.cursorPosition % 4;
-  uint8_t y = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
-  uint8_t z = gameState.activeLayer;
+  int x = gameState.cursorPosition % 4;
+  int y = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  int z = gameState.activeLayer;
   uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
 
   bool foundWin = false;
