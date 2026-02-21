@@ -467,6 +467,7 @@ void updateBoard(GameState &gameState)
       uint8_t nextIndex = selectRandomEmptyIndex(gameState.board);
       gameState.activeLayer = nextIndex / 16;
       gameState.cursorPosition = nextIndex % 16;
+      gameState.cacheIsDirty[gameState.activeLayer] = true;
     }
   }
   lastButtonValue = buttonValue;
