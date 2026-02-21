@@ -348,16 +348,18 @@ bool isStalemate(const uint8_t board[NUM_LAYERS][NUM_POSITIONS])
 
 void updatePotentialCaptures(GameState &gameState)
 {
-  int x = gameState.cursorPosition % GRID_DIMENSION;
-  int y = gameState.cursorPosition / GRID_DIMENSION; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
-  int z = gameState.activeLayer;
+  const int x = gameState.cursorPosition % GRID_DIMENSION;
+  const int y = gameState.cursorPosition / GRID_DIMENSION; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  const int z = gameState.activeLayer;
   uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
+
+  uint16_t capturedMask[NUM_LAYERS] = {0};
 
   for (uint8_t d = 0; d < 13; d++)
   {
-    int dx = DIRECTIONS[d][0];
-    int dy = DIRECTIONS[d][1];
-    int dz = DIRECTIONS[d][2];
+    const int dx = DIRECTIONS[d][0];
+    const int dy = DIRECTIONS[d][1];
+    const int dz = DIRECTIONS[d][2];
 
     // Flanked pieces can be either forwards or backwards from the placed piece
     uint8_t positiveNumFlanked = getNumFlanked(gameState.board, x, y, z, dx, dy, dz, player);
@@ -368,23 +370,37 @@ void updatePotentialCaptures(GameState &gameState)
       int currentX = x + dx * step;
       int currentY = y + dy * step;
       int currentZ = z + dz * step;
-      int currentIndex = currentY * GRID_DIMENSION + currentX;
+      int currentPosition = currentY * GRID_DIMENSION + currentX;
 
-      gameState.board[currentZ][currentIndex] = 0;
-      // todo clearing as we go affects cases where a piece is part of a double capture -- not sure if that is possible i a 4x4 though. but would still be better to calculate first and delete later
-      gameState.cacheIsDirty[currentZ] = true;
+      capturedMask[currentZ] |= (uint16_t)(1u << currentPosition);
     }
 
-    for (int step = 1; step <= negativeNumFlanked; step++)
+    for (uint8_t step = 1; step <= negativeNumFlanked; step++)
     {
       int currentX = x - dx * step;
       int currentY = y - dy * step;
       int currentZ = z - dz * step;
-      int currentIndex = currentY * GRID_DIMENSION + currentX;
+      int currentPosition = currentY * GRID_DIMENSION + currentX;
 
-      gameState.board[currentZ][currentIndex] = 0;
-      gameState.cacheIsDirty[currentZ] = true;
+      capturedMask[currentZ] |= (uint16_t)(1u << currentPosition);
     }
+  }
+
+  for (uint8_t layer = 0; layer < NUM_LAYERS; layer++)
+  {
+    if (capturedMask[layer] == 0)
+    {
+      continue;
+    }
+
+    for (uint8_t position = 0; position < NUM_POSITIONS; position++)
+    {
+      if (capturedMask[layer] & (uint16_t)(1u << position))
+      {
+        gameState.board[layer][position] = 0;
+      }
+    }
+    gameState.cacheIsDirty[layer] = true;
   }
 }
 
