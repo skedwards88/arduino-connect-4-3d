@@ -33,6 +33,31 @@ const int LEFT_PIN = 7;
 const int RIGHT_PIN = 6;
 const int BUTTON_PIN = A1;
 
+// Don't need to scan for ALL possible 4 in a rows,
+// just need to check if the last played spot makes a 4 in a row.
+// These are the possible 4-in-a-row directions
+// (consider a line with between each of these coordinates and
+// the coordinate {0,0,0} representing the player's location).
+// Ditto for checking for captured spots -- just need to follow
+// the direction forward and backwards from the placed piece.
+const int DIRECTIONS[13][3] = {
+    // Vary just x, y, or z
+    {1, 0, 0},
+    {0, 1, 0},
+    {0, 0, 1},
+    // Vary xy, xz, or yz
+    {1, 1, 0},
+    {1, 0, 1},
+    {0, 1, 1},
+    {1, -1, 0},
+    {1, 0, -1},
+    {0, 1, -1},
+    // Vary xyz
+    {1, 1, 1},
+    {1, -1, 1},
+    {1, 1, -1},
+    {-1, 1, 1}};
+
 enum GameStatus : uint8_t
 {
   IN_PROGRESS = 0,
@@ -305,31 +330,50 @@ bool isStalemate(const uint8_t board[4][16])
   return true;
 }
 
+void updatePotentialCaptures(GameState &gameState)
+{
+  int x = gameState.cursorPosition % 4;
+  int y = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
+  int z = gameState.activeLayer;
+  uint8_t player = getValueAtXYZ(gameState.board, x, y, z);
+
+  for (uint8_t d = 0; d < 13; d++)
+  {
+    int dx = DIRECTIONS[d][0];
+    int dy = DIRECTIONS[d][1];
+    int dz = DIRECTIONS[d][2];
+
+    // Flanked pieces can be either forwards or backwards from the placed piece
+    uint8_t positiveNumFlanked = getNumFlanked(gameState.board, x, y, z, dx, dy, dz, player);
+    uint8_t negativeNumFlanked = getNumFlanked(gameState.board, x, y, z, -dx, -dy, -dz, player);
+
+    for (uint8_t step = 1; step <= positiveNumFlanked; step++)
+    {
+      int currentX = x + dx * step;
+      int currentY = y + dy * step;
+      int currentZ = z + dz * step;
+      int currentIndex = currentY * 4 + currentX;
+
+      gameState.board[currentZ][currentIndex] = 0;
+      // todo clearing as we go affects cases where a piece is part of a double capture -- not sure if that is possible i a 4x4 though. but would still be better to calculate first and delete later
+      gameState.cacheIsDirty[currentZ] = true;
+    }
+
+    for (int step = 1; step <= negativeNumFlanked; step++)
+    {
+      int currentX = x - dx * step;
+      int currentY = y - dy * step;
+      int currentZ = z - dz * step;
+      int currentIndex = currentY * 4 + currentX;
+
+      gameState.board[currentZ][currentIndex] = 0;
+      gameState.cacheIsDirty[currentZ] = true;
+    }
+  }
+}
+
 void updatePotentialGameOver(GameState &gameState)
 {
-  // Don't need to scan for ALL possible 4 in a rows,
-  // just need to check if the last played spot makes a 4 in a row
-  // These are the possible 4-in-a-row directions
-  // (consider a line with between each of these coordinates and
-  // the coordinate {0,0,0} representing the player's location)
-  static const int DIRECTIONS[13][3] = {
-      // Vary just x, y, or z
-      {1, 0, 0},
-      {0, 1, 0},
-      {0, 0, 1},
-      // Vary xy, xz, or yz
-      {1, 1, 0},
-      {1, 0, 1},
-      {0, 1, 1},
-      {1, -1, 0},
-      {1, 0, -1},
-      {0, 1, -1},
-      // Vary xyz
-      {1, 1, 1},
-      {1, -1, 1},
-      {1, 1, -1},
-      {-1, 1, 1}};
-
   int x = gameState.cursorPosition % 4;
   int y = gameState.cursorPosition / 4; // C++ automatically rounds down for integer division, so no need for something like Math.floor()
   int z = gameState.activeLayer;
@@ -342,6 +386,8 @@ void updatePotentialGameOver(GameState &gameState)
     int dx = DIRECTIONS[d][0];
     int dy = DIRECTIONS[d][1];
     int dz = DIRECTIONS[d][2];
+
+    // Check the streak from both the forwards and backwards direction from the piece
     uint8_t positiveStreak = getStreakLength(gameState.board, x, y, z, dx, dy, dz, player);
     uint8_t negativeStreak = getStreakLength(gameState.board, x, y, z, -dx, -dy, -dz, player);
 
@@ -363,29 +409,6 @@ void updatePotentialGameOver(GameState &gameState)
         gameState.winMask[currentZ] |= (1u << (currentIndex));
       }
       foundWin = true;
-    }
-
-    uint8_t positiveNumFlanked = getNumFlanked(gameState.board, x, y, z, dx, dy, dz, player);
-    uint8_t negativeNumFlanked = getNumFlanked(gameState.board, x, y, z, -dx, -dy, -dz, player);
-    for (uint8_t step = 1; step <= positiveNumFlanked; step++)
-    {
-      int currentX = x + dx * step;
-      int currentY = y + dy * step;
-      int currentZ = z + dz * step;
-      int currentIndex = currentY * 4 + currentX;
-
-      gameState.board[currentZ][currentIndex] = 0;
-      gameState.cacheIsDirty[currentZ] = true;
-    }
-    for (int step = 1; step <= negativeNumFlanked; step++)
-    {
-      int currentX = x - dx * step;
-      int currentY = y - dy * step;
-      int currentZ = z - dz * step;
-      int currentIndex = currentY * 4 + currentX;
-
-      gameState.board[currentZ][currentIndex] = 0;
-      gameState.cacheIsDirty[currentZ] = true;
     }
   }
 
@@ -447,9 +470,12 @@ void updateBoard(GameState &gameState)
   {
     lastPressMs = now;
 
-    // Update board
+    // Record the placement on the board
     gameState.board[gameState.activeLayer][gameState.cursorPosition] = gameState.isPlayer1Turn ? 1 : 2;
     gameState.cacheIsDirty[gameState.activeLayer] = true;
+
+    // Record captures
+    updatePotentialCaptures(gameState);
 
     // Check for game over (win or stalemate)
     updatePotentialGameOver(gameState);
