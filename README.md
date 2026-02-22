@@ -3,74 +3,115 @@
 ## Components
 
 - 64 bicolor red/blue common cathode LEDs
+- 20 AWG tinned copper wire or similar
 - 32 470 ohm or similar resistors for the LEDs
 - 4 shift registers similar or equivalent to 74HC595
-- 4 NPN transistors similar or equivalent to 2A222 todo check part number
-- 4 todo ohm or similar resistors for the transistors
-- 1 capacitor similar or equivalent to todo get part number
-- 1 5D joystick
+- 4 NPN transistors similar or equivalent to 2N2222A
+- 4 1k ohm or similar resistors for the transistors
+- 1 capacitor similar or equivalent to T0344, 6.3v 2200uF
+- 1 5D (digital) joystick
 - 1 Arduino uno
 
 ## Wiring
 
-- Joystick pin VRx to Arduino pin A0
-- Joystick pin VRy to Arduino pin A1
-- Joystick pin SW to Arduino pin D7
-- Joystick pin 5V to 5V
-- Joystick pin ground to ground
+- LEDs are in a 4x4 cube.
+  - For each LED vertical column, all red leads are joined vertically and all blue leads are joined vertically
+  - For each LED horizontal layer, all LED cathodes are joined across the layer
 
-- Shift register #1 pin 1 (Q1) to 470 ohm resistor to LED #1 blue pin
-- Shift register #1 pin 2 (Q2) to 470 ohm resistor to LED #2 red pin
-- Shift register #1 pin 3 (Q3) to 470 ohm resistor to LED #2 blue pin
-- Shift register #1 pin 4 (Q4) to 470 ohm resistor to LED #3 red pin
-- Shift register #1 pin 5 (Q5) to 470 ohm resistor to LED #3 blue pin
-- Shift register #1 pin 6 (Q6) to 470 ohm resistor to LED #4 red pin
-- Shift register #1 pin 7 (Q7) to 470 ohm resistor to LED #4 blue pin
+- Shift register #1 pin 1 (Q1) to 470 ohm resistor to LED column #1 blue pin
+- Shift register #1 pin 2 (Q2) to 470 ohm resistor to LED column #2 red pin
+- Shift register #1 pin 3 (Q3) to 470 ohm resistor to LED column #2 blue pin
+- Shift register #1 pin 4 (Q4) to 470 ohm resistor to LED column #3 red pin
+- Shift register #1 pin 5 (Q5) to 470 ohm resistor to LED column #3 blue pin
+- Shift register #1 pin 6 (Q6) to 470 ohm resistor to LED column #4 red pin
+- Shift register #1 pin 7 (Q7) to 470 ohm resistor to LED column #4 blue pin
 - Shift register #1 pin 8 (ground) to ground
-- Shift register #1 pin 9 (Serial out) to Shift register #2 pin 14
-- Shift register #1 pin 10 (MR) to 5V
+- Shift register #1 pin 9 (serial out) to shift register #2 pin 14
+- Shift register #1 pin 10 (MR, master reclear) to 5V
 - Shift register #1 pin 11 (SH_CP, clock pin) to Arduino pin D12 + Shift register #2 pin 11
-- Shift register #1 pin 12 (ST_CP, latch pin) to Arduino pin D8 + Shift register #2 pin 12
-- Shift register #1 pin 13 (OE) to ground
+- Shift register #1 pin 12 (ST_CP, latch pin) to Arduino pin D10 + Shift register #2 pin 12
+- Shift register #1 pin 13 (OE, output enable) to ground
 - Shift register #1 pin 14 (DS, serial in) to Arduino pin D11
-- Shift register #1 pin 15 (Q0) to 470 ohm resistor to LED #1 red pin
+- Shift register #1 pin 15 (Q0) to 470 ohm resistor to LED column #1 red pin
 - Shift register #1 pin 16 (Vcc) to 5V
 
-- Shift register #2 pin 1 (Q1) to 470 ohm resistor to LED #5 blue pin
-- Shift register #2 pin 2 (Q2) to 470 ohm resistor to LED #6 red pin
-- Shift register #2 pin 3 (Q3) to 470 ohm resistor to LED #6 blue pin
-- Shift register #2 pin 4 (Q4) to 470 ohm resistor to LED #7 red pin
-- Shift register #2 pin 5 (Q5) to 470 ohm resistor to LED #7 blue pin
-- Shift register #2 pin 6 (Q6) to 470 ohm resistor to LED #8 red pin
-- Shift register #2 pin 7 (Q7) to 470 ohm resistor to LED #8 blue pin
+- Shift register #2 pin 1 (Q1) to 470 ohm resistor to LED column #5 blue pin
+- Shift register #2 pin 2 (Q2) to 470 ohm resistor to LED column #6 red pin
+- Shift register #2 pin 3 (Q3) to 470 ohm resistor to LED column #6 blue pin
+- Shift register #2 pin 4 (Q4) to 470 ohm resistor to LED column #7 red pin
+- Shift register #2 pin 5 (Q5) to 470 ohm resistor to LED column #7 blue pin
+- Shift register #2 pin 6 (Q6) to 470 ohm resistor to LED column #8 red pin
+- Shift register #2 pin 7 (Q7) to 470 ohm resistor to LED column #8 blue pin
 - Shift register #2 pin 8 (ground) to ground
-- Shift register #2 pin 9 (Serial out) to Shift register #3 pin 14
-- Shift register #2 pin 10 (MR) to 5V
-- Shift register #2 pin 11 (SH_CP, clock pin) to Shift register #1 pin 11 + Shift register #3 pin 11
-- Shift register #2 pin 12 (ST_CP, latch pin) to Shift register #1 pin 12 + Shift register #3 pin 12
-- Shift register #2 pin 13 (OE) to ground
-- Shift register #2 pin 14 (DS, serial in) to Shift register #1 pin 9
-- Shift register #2 pin 15 (Q0) to 470 ohm resistor to LED #5 red pin
+- Shift register #2 pin 9 (serial out) to shift register #3 pin 14
+- Shift register #2 pin 10 (MR, master reclear) to 5V
+- Shift register #2 pin 11 (SH_CP, clock pin) to shift register #1 pin 11 + shift register #3 pin 11
+- Shift register #2 pin 12 (ST_CP, latch pin) to shift register #1 pin 12 + Shift register #3 pin 12
+- Shift register #2 pin 13 (OE, output enable) to ground
+- Shift register #2 pin 14 (DS, serial in) to shift register #1 pin 9
+- Shift register #2 pin 15 (Q0) to 470 ohm resistor to LED column #5 red pin
 - Shift register #2 pin 16 (Vcc) to 5V
 
-- Shift register #3 pin 1 (Q1) to 470 ohm resistor to LED #9 blue pin
+- Shift register #3 pin 1 (Q1) to 470 ohm resistor to LED column #9 blue pin
+- Shift register #3 pin 2 (Q2) to 470 ohm resistor to LED column #10 red pin
+- Shift register #3 pin 3 (Q3) to 470 ohm resistor to LED column #10 blue pin
+- Shift register #3 pin 4 (Q4) to 470 ohm resistor to LED column #11 red pin
+- Shift register #3 pin 5 (Q5) to 470 ohm resistor to LED column #11 blue pin
+- Shift register #3 pin 6 (Q6) to 470 ohm resistor to LED column #12 red pin
+- Shift register #3 pin 7 (Q7) to 470 ohm resistor to LED column #12 blue pin
 - Shift register #3 pin 8 (ground) to ground
+- Shift register #3 pin 9 (serial out) to shift register #4 pin 14
 - Shift register #3 pin 10 (MR) to 5V
-- Shift register #3 pin 11 (SH_CP, clock pin) to Shift register #2 pin 11
-- Shift register #3 pin 12 (ST_CP, latch pin) to Shift register #2 pin 12
-- Shift register #3 pin 13 (OE) to ground
-- Shift register #3 pin 14 (DS, serial in) to Shift register #2 pin 9
-- Shift register #3 pin 15 (Q0) to 470 ohm resistor to LED #9 red pin
+- Shift register #3 pin 11 (SH_CP, clock pin) to shift register #2 pin 11 + Shift register #4 pin 11
+- Shift register #3 pin 12 (ST_CP, latch pin) to shift register #2 pin 12 + Shift register #4 pin 12
+- Shift register #3 pin 13 (OE, output enable) to ground
+- Shift register #3 pin 14 (DS, serial in) to shift register #2 pin 9
+- Shift register #3 pin 15 (Q0) to 470 ohm resistor to LED column #9 red pin
 - Shift register #3 pin 16 (Vcc) to 5V
 
-- All LED cathodes to ground
-- LEDs should be in a 9x9 grid. The code assumes this layout:
+- Shift register #4 pin 1 (Q1) to 470 ohm resistor to LED column #13 blue pin
+- Shift register #4 pin 2 (Q2) to 470 ohm resistor to LED column #14 red pin
+- Shift register #4 pin 3 (Q3) to 470 ohm resistor to LED column #14 blue pin
+- Shift register #4 pin 4 (Q4) to 470 ohm resistor to LED column #15 red pin
+- Shift register #4 pin 5 (Q5) to 470 ohm resistor to LED column #15 blue pin
+- Shift register #4 pin 6 (Q6) to 470 ohm resistor to LED column #16 red pin
+- Shift register #4 pin 7 (Q7) to 470 ohm resistor to LED column #16 blue pin
+- Shift register #4 pin 8 (ground) to ground
+- Shift register #4 pin 9 (serial out) to nothing
+- Shift register #4 pin 10 (MR) to 5V
+- Shift register #4 pin 11 (SH_CP, clock pin) to shift register #3 pin 11
+- Shift register #4 pin 12 (ST_CP, latch pin) to shift register #3 pin 12
+- Shift register #4 pin 13 (OE, output enable) to ground
+- Shift register #4 pin 14 (DS, serial in) to shift register #3 pin 9
+- Shift register #4 pin 15 (Q0) to 470 ohm resistor to LED column #13 red pin
+- Shift register #4 pin 16 (Vcc) to 5V
 
-  Column 1 | Column 2 | Column 3
-  --- | --- | ---
-  LED #1 | LED #2 | LED #3
-  LED #4 | LED #5 | LED #6
-  LED #7 | LED #8 | LED #9
+- Transistor #1 emitter pin to ground
+- Transistor #1 base pin to 1k ohm resistor to Arduino pin D2
+- Transistor #1 collector pin to LED layer #1 pin
+
+- Transistor #2 emitter pin to ground
+- Transistor #2 base pin to 1k ohm resistor to Arduino pin D3
+- Transistor #2 collector pin to LED layer #2 pin
+
+- Transistor #3 emitter pin to ground
+- Transistor #3 base pin to 1k ohm resistor to Arduino pin D4
+- Transistor #3 collector pin to LED layer #3 pin
+
+- Transistor #4 emitter pin to ground
+- Transistor #4 base pin to 1k ohm resistor to Arduino pin D5
+- Transistor #4 collector pin to LED layer #4 pin
+
+- Joystick COM pin to ground
+- Joystick up pin to Arduino D9
+- Joystick down pin to Arduino D8
+- Joystick left pin to Arduino D7
+- Joystick right pin to Arduino D6
+- Joystick middle pin to Arduino A1
+
+- Capacitor
+
+- TODO power supply?
 
 ## Output
 

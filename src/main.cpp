@@ -9,7 +9,7 @@ const int NUM_POSITIONS = 16;      // Positions (bicolor LEDs) per layer
 const int NUM_SHIFT_REGISTERS = 4; // 16 bicolor LEDs = 32 leads; 8 leads controlled by 1 shift register
 
 // Pins for the first shift register
-const int LATCH_PIN = 10;
+const int LATCH_PIN = 10; // todo update readme if changed during soldering
 const int CLOCK_PIN = 12;
 const int DATA_PIN = 11;
 
