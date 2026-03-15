@@ -1,12 +1,9 @@
 #include "Arduino.h"
+#include "GameLogic.h"
+#include "GameConfig.h"
 
 // todo figure out how to write tests because that would have made a lot of code clean up easier
 // todo use enum or struct for 0/1/2 board state?
-
-const int GRID_DIMENSION = 4;
-const int NUM_LAYERS = GRID_DIMENSION;
-const int NUM_POSITIONS = 16;      // Positions (bicolor LEDs) per layer
-const int NUM_SHIFT_REGISTERS = 4; // 16 bicolor LEDs = 32 leads; 8 leads controlled by 1 shift register
 
 // Pins for the first shift register
 const int LATCH_PIN = 10; // todo update readme if changed during soldering
@@ -245,11 +242,6 @@ void updateCursorPosition(GameState &gameState)
     lastUp = currentUp;
     lastDown = currentDown;
   }
-}
-
-uint8_t getValueAtXYZ(const uint8_t board[NUM_LAYERS][NUM_POSITIONS], int x, int y, int z)
-{
-  return board[z][y * GRID_DIMENSION + x];
 }
 
 void freezeGame(GameState &gameState)
