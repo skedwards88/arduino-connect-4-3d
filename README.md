@@ -28,10 +28,10 @@
 - Shift register #1 pin 8 (ground) to ground
 - Shift register #1 pin 9 (serial out) to shift register #2 pin 14
 - Shift register #1 pin 10 (MR, master reclear) to 5V
-- Shift register #1 pin 11 (SH_CP, clock pin) to Arduino pin D12 + Shift register #2 pin 11
-- Shift register #1 pin 12 (ST_CP, latch pin) to Arduino pin D10 + Shift register #2 pin 12
+- Shift register #1 pin 11 (SH_CP, clock pin) to Arduino pin D6 + Shift register #2 pin 11
+- Shift register #1 pin 12 (ST_CP, latch pin) to Arduino pin D7 + Shift register #2 pin 12
 - Shift register #1 pin 13 (OE, output enable) to ground
-- Shift register #1 pin 14 (DS, serial in) to Arduino pin D11
+- Shift register #1 pin 14 (DS, serial in) to Arduino pin D8
 - Shift register #1 pin 15 (Q0) to 470 ohm resistor to LED column #1 red pin
 - Shift register #1 pin 16 (Vcc) to 5V
 
@@ -103,11 +103,11 @@
 - Transistor #4 collector pin to LED layer #4 pin
 
 - Joystick COM pin to ground
-- Joystick up pin to Arduino D9
-- Joystick down pin to Arduino D8
-- Joystick left pin to Arduino D7
-- Joystick right pin to Arduino D6
-- Joystick middle pin to Arduino A1
+- Joystick up pin to Arduino A1
+- Joystick down pin to Arduino D12
+- Joystick left pin to Arduino D11
+- Joystick right pin to Arduino D10
+- Joystick middle pin to Arduino D9
 
 - Capacitor
 

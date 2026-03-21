@@ -9,9 +9,9 @@ const int NUM_POSITIONS = 16;      // Positions (bicolor LEDs) per layer
 const int NUM_SHIFT_REGISTERS = 4; // 16 bicolor LEDs = 32 leads; 8 leads controlled by 1 shift register
 
 // Pins for the first shift register
-const int LATCH_PIN = 10; // todo update readme if changed during soldering
-const int CLOCK_PIN = 12;
-const int DATA_PIN = 11;
+const int LATCH_PIN = 7;
+const int CLOCK_PIN = 6;
+const int DATA_PIN = 8;
 
 // Pins for the layers
 const int LAYER0_PIN = 2;
@@ -28,11 +28,11 @@ const unsigned int LAYER_ON_TIME_US = 800;
 const unsigned long JOYSTICK_DEBOUNCE_MS = 50;
 
 // Pins for the joystick
-const int UP_PIN = 9;
-const int DOWN_PIN = 8;
-const int LEFT_PIN = 7;
-const int RIGHT_PIN = 6;
-const int BUTTON_PIN = A1;
+const int UP_PIN = A1; // todo d13 not working?
+const int DOWN_PIN = 12;
+const int LEFT_PIN = 11;
+const int RIGHT_PIN = 10;
+const int BUTTON_PIN = 9;
 
 // Don't need to scan for ALL possible 4 in a rows,
 // just need to check if the last played spot makes a 4 in a row.
