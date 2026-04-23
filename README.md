@@ -113,8 +113,6 @@
 
 - Capacitor
 
-- TODO power supply?
-
 ## Output
 
 - All LEDs are off initially. One randomly selected LED flashes between off and red+blue (purple).
@@ -130,7 +128,8 @@ Demo:
 
 Todo
 
-## Potential future additions todo
+## Potential future additions
 
 - Make winner an enum (and possibly board values too)
 - Look into using direct port writes instead of shiftOut
+- Resolder the joystick so that the connection are in reverse (up = 9, reset = A3). The header got flipped when redoing the ground pin.

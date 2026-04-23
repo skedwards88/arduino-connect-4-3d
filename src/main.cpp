@@ -28,13 +28,13 @@ const unsigned int LAYER_ON_TIME_US = 800;
 const unsigned long JOYSTICK_DEBOUNCE_MS = 50;
 
 // Pins for the joystick
-const int UP_PIN = 9;
-const int DOWN_PIN = 10;
-const int LEFT_PIN = 11;
-const int RIGHT_PIN = 12;
-const int BUTTON_PIN = A3;
-const int SET_PIN = A2;
-const int RESET_PIN = A1;
+const int UP_PIN = A2;
+const int DOWN_PIN = A1;
+const int LEFT_PIN = 12;
+const int RIGHT_PIN = A3;
+const int BUTTON_PIN = 11;
+const int SET_PIN = 10;
+const int RESET_PIN = 9;
 
 // Don't need to scan for ALL possible 4 in a rows,
 // just need to check if the last played spot makes a 4 in a row.
