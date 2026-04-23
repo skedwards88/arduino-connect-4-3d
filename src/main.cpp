@@ -1,8 +1,5 @@
 #include "Arduino.h"
 
-// todo figure out how to write tests because that would have made a lot of code clean up easier
-// todo use enum or struct for 0/1/2 board state?
-
 const int GRID_DIMENSION = 4;
 const int NUM_LAYERS = GRID_DIMENSION;
 const int NUM_POSITIONS = 16;      // Positions (bicolor LEDs) per layer

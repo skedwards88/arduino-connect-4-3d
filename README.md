@@ -130,6 +130,8 @@ Todo
 
 ## Potential future additions
 
-- Make winner an enum (and possibly board values too)
+- Make winner an enum
+- Use enum or struct for 0/1/2 board state
 - Look into using direct port writes instead of shiftOut
+- Figure out how to write tests because that would have made a lot of code refactoring easier
 - Resolder the joystick so that the connection are in reverse (up = 9, reset = A3). The header got flipped when redoing the ground pin.
