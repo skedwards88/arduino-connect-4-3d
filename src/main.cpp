@@ -127,67 +127,6 @@ void initializeGameState(GameState &gameState)
   gameState.isPlayer1Turn = true;
   gameState.status = IN_PROGRESS;
   gameState.frozenUntilMs = 0;
-
-  // todo just for testing to get the board closer to game over
-  // gameState.board[0][1] = 1;
-  // gameState.board[1][1] = 1;
-  // gameState.board[2][1] = 1;
-  // gameState.board[3][3] = 1;
-  // gameState.board[3][2] = 1;
-  // gameState.board[3][0] = 1;
-  // gameState.board[0][2] = 2;
-  // gameState.board[1][2] = 2;
-  // gameState.board[2][2] = 2;
-  // gameState.activeLayer = 3;
-  // gameState.cursorPosition = 1;
-  // // fuller board
-  // gameState.board[2][0] = 2;
-  // gameState.board[2][3] = 1;
-  // gameState.board[1][0] = 2;
-  // gameState.board[1][3] = 1;
-  // gameState.board[0][3] = 1;
-  // gameState.board[0][0] = 2;
-  // gameState.board[1][4] = 2;
-  // gameState.board[1][5] = 1;
-  // gameState.board[0][6] = 1;
-  // gameState.board[0][7] = 2;
-  // gameState.board[0][8] = 1;
-  // gameState.board[1][9] = 1;
-  // gameState.board[2][10] = 1;
-  // gameState.board[3][13] = 1;
-  // gameState.board[3][12] = 1;
-  // gameState.board[3][10] = 1;
-  // gameState.board[0][12] = 2;
-  // gameState.board[1][12] = 2;
-  // gameState.board[2][12] = 2;
-
-  // todo just for testing capture
-  // gameState.board[0][0] = 1;
-  // gameState.board[0][1] = 2;
-  // gameState.board[0][2] = 2;
-  // gameState.activeLayer = 0;
-
-  // todo just for testing dual capture
-  // gameState.board[0][0] = 1;
-  // gameState.board[0][1] = 2;
-  // gameState.board[0][2] = 2;
-  // gameState.board[1][3] = 2;
-  // gameState.board[2][3] = 2;
-  // gameState.board[3][3] = 1;
-  // gameState.activeLayer = 3;
-  // gameState.cursorPosition = 1;
-
-  // todo just for testing to get the board closer to stalemate
-  // for (int l = 0; l < NUM_LAYERS; l++)
-  // {
-  //   for (int i = 0; i < NUM_POSITIONS; i++)
-  //   {
-  //     gameState.board[l][i] = 2;
-  //   }
-  // }
-  // gameState.board[0][2] = 0;
-  // gameState.activeLayer = 0;
-  // gameState.cursorPosition = 2;
 }
 
 void updateCursorPosition(GameState &gameState)
