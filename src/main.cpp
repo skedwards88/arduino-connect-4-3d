@@ -121,7 +121,9 @@ void initializeGameState(GameState &gameState)
   gameState.cursorPosition = random(0, NUM_POSITIONS);
   gameState.blinkIsOn = false;
   gameState.lastBlinkMs = 0;
-  gameState.isPlayer1Turn = true;
+  // The board is wired so that red = 1
+  // Since I want blue to go first, init isPlayer1Turn as false
+  gameState.isPlayer1Turn = false;
   gameState.status = IN_PROGRESS;
   gameState.frozenUntilMs = 0;
 }
