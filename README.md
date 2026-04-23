@@ -103,11 +103,13 @@
 - Transistor #4 collector pin to LED layer #4 pin
 
 - Joystick COM pin to ground
-- Joystick up pin to Arduino A1
-- Joystick down pin to Arduino D12
+- Joystick up pin to Arduino D9
+- Joystick down pin to Arduino D10
 - Joystick left pin to Arduino D11
-- Joystick right pin to Arduino D10
-- Joystick middle pin to Arduino D9
+- Joystick right pin to Arduino D12
+- Joystick middle pin to Arduino A3
+- Joystick set pin to Arduino A2
+- Joystick reset pin to Arduino A1
 
 - Capacitor
 
