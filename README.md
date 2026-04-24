@@ -124,9 +124,9 @@
 - If all LEDs are lit without a 4-in-a-row of any color, the whole board flashes alternating red/blue and then the game resets.
 - If the game is not over, a new random LED flashes and the second player takes their turn.
 
-Demo:
+## Demo
 
-Todo
+https://github.com/user-attachments/assets/5207ff8a-a826-4d72-816d-ab15e36ebafd
 
 ## Potential future additions
 
