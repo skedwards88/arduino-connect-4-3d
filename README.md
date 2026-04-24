@@ -14,7 +14,7 @@
 
 ## Wiring
 
-- LEDs are in a 4x4 cube.
+- LEDs are in a 4x4 cube of tinned copper wire.
   - For each LED vertical column, all red leads are joined vertically and all blue leads are joined vertically
   - For each LED horizontal layer, all LED cathodes are joined across the layer
 
@@ -115,12 +115,12 @@
 
 ## Output
 
-- All LEDs are off initially. One randomly selected LED flashes between off and red+blue (purple).
+- All LEDs are off initially. One randomly selected LED flashes blue.
 - Moving the joystick changes which LED is flashing to indicate your current position.
   You can only move within the current layer.
 - Clicking the joystick places the current player's color at that position.
 - If the placement causes a stretch of the opponent's color to be flanked by the current player's color (in any direction, spanning any layers), the flanked spots are cleared.
-- If 4-in-a-row of a color is achieved (in any direction, spanning any layers), the 4-in-a-row(s) flashes several times and then the game resets.
+- If 4-in-a-row of a color is achieved (in any direction, spanning any layers), the 4-in-a-row(s) remain solid while any other lit LEDs flash several times, and then the game resets.
 - If all LEDs are lit without a 4-in-a-row of any color, the whole board flashes alternating red/blue and then the game resets.
 - If the game is not over, a new random LED flashes and the second player takes their turn.
 
