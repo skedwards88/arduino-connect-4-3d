@@ -1,5 +1,8 @@
 # Arduino Connect-4 3D
 
+> [!Note]
+> For an expanded game, see [skedwards88/arduino-3d-c4-plus-more](https://github.com/skedwards88/arduino-3d-c4-plus-more).
+
 ## Components
 
 - 64 bicolor red/blue common cathode LEDs
